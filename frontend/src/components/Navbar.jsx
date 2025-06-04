@@ -22,7 +22,6 @@ const Navbar = () => {
                     {authUser ? (
                         <>
                             <Link to="/" className="nav-link">Home</Link>
-                            <Link to="/profile" className="nav-link">Profile</Link>
                             <button onClick={handleLogout} className="nav-button">Logout</button>
                         </>
                     ) : (
