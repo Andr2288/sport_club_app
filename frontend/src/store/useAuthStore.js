@@ -14,8 +14,6 @@ export const useAuthStore = create((set) => ({
 
     setIsLoggingIn: (value) => set({ isLoggingIn: value }),
 
-    setIsUpdatingProfile: (value) => set({ isUpdatingProfile: value }),
-
     checkAuth: async () => {
         try {
             const res = await axiosInstance.get("/auth/check");
