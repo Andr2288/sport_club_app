@@ -7,7 +7,7 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import database from "./lib/db.js"
+import { connectDB } from "./config/database.js";
 
 dotenv.config();
 const app = express();
@@ -28,5 +28,5 @@ app.use("/api/message", messageRoutes);
 
 app.listen(PORT, () => {
     console.log(`Express server listening on port ${PORT}`);
-    database.connectDB();
+    connectDB();
 });

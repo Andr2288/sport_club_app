@@ -1,14 +1,14 @@
-// D:/RECOVER_DATA/Programming/React_Node.js/CHAT-APP/backend/src/controllers\message.controller.js
+// src/controllers/message.controller.js
 
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
 
 const getUsersForSideBar = async (req, res) => {
-
     try {
-        const loggedInUserId = req.user._id;
-        const filteredUsers = await User.find({_id: {$ne:loggedInUserId}}).select("-password");
+        const loggedInUserId = req.user.id;
+
+        const filteredUsers = await User.findAll(loggedInUserId);
 
         return res.status(200).json(filteredUsers);
     }
@@ -19,17 +19,11 @@ const getUsersForSideBar = async (req, res) => {
 }
 
 const getMessages = async (req, res) => {
-
     try {
         const { id: userToChatId } = req.params;
-        const myId = req.user._id;
+        const myId = req.user.id;
 
-        const messages = await Message.find({
-            $or:[
-                {senderId:myId, receiverId:userToChatId},
-                {senderId:userToChatId, receiverId:myId},
-            ]
-        });
+        const messages = await Message.findByUsers(myId, userToChatId);
 
         return res.status(200).json(messages);
     }
@@ -40,27 +34,24 @@ const getMessages = async (req, res) => {
 }
 
 const sendMessage = async (req, res) => {
-
     try {
         const { text, image} = req.body;
         const { id: receiverId } = req.params;
-        const senderId = req.user._id;
+        const senderId = req.user.id;
 
-        let imageUrl;
+        let imageUrl = null;
 
         if (image) {
             const uploadResponse = await cloudinary.uploader.upload(image);
             imageUrl = uploadResponse.secure_url;
         }
 
-        const newMessage = new Message({
+        const newMessage = await Message.create({
             senderId,
             receiverId,
             text,
             image: imageUrl,
         });
-
-        await newMessage.save();
 
         res.status(201).json(newMessage);
     }
