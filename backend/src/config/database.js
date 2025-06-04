@@ -37,29 +37,14 @@ const createTables = async () => {
         // Створення таблиці користувачів
         await pool.execute(`
             CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(255) NOT NULL UNIQUE,
+                                                 id INT AUTO_INCREMENT PRIMARY KEY,
+                                                 email VARCHAR(255) NOT NULL UNIQUE,
                 full_name VARCHAR(255) NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 profile_pic TEXT DEFAULT '',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )
-        `);
-
-        // Створення таблиці повідомлень
-        await pool.execute(`
-            CREATE TABLE IF NOT EXISTS messages (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                sender_id INT NOT NULL,
-                receiver_id INT NOT NULL,
-                text TEXT,
-                image TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
-            )
+                )
         `);
 
         console.log('Database tables created successfully!');

@@ -6,7 +6,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import authRoutes from "./routes/auth.route.js";
-import messageRoutes from "./routes/message.route.js";
 import { connectDB } from "./config/database.js";
 
 dotenv.config();
@@ -24,7 +23,6 @@ app.use(cors(
 ));
 
 app.use("/api/auth", authRoutes);
-app.use("/api/message", messageRoutes);
 
 app.listen(PORT, () => {
     console.log(`Express server listening on port ${PORT}`);
