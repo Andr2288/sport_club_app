@@ -1,15 +1,15 @@
-const { authUser, logout } = useAuthStore();
-
-const handleLogout = async () => {
-    await logout();
-    toast.success('Logged out successfully');
-};import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore.js';
 import toast from 'react-hot-toast';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
     const { authUser, logout } = useAuthStore();
+
+    const handleLogout = async () => {
+        await logout();
+        toast.success('Logged out successfully');
+    };
 
     return (
         <nav className="navbar">
