@@ -87,7 +87,6 @@ class Membership {
     }
 
     static async deleteById(membershipId) {
-        // Перевіряємо чи немає активних підписок
         const [activeSubscriptions] = await pool.execute(
             'SELECT COUNT(*) as count FROM client_memberships WHERE membership_id = ? AND status = "active"',
             [membershipId]
@@ -106,13 +105,11 @@ class Membership {
     }
 
     static async assignToClient(clientId, membershipId, startDate) {
-        // Отримуємо інформацію про абонемент
         const membership = await this.findById(membershipId);
         if (!membership) {
             throw new Error('Membership not found');
         }
 
-        // Розраховуємо дату закінчення
         const start = new Date(startDate);
         const end = new Date(start);
         end.setDate(end.getDate() + membership.durationDays);
@@ -134,38 +131,68 @@ class Membership {
 
     static async getPopularMemberships() {
         const [rows] = await pool.execute(`
-            SELECT 
-                m.membership_id as membershipId,
-                m.name,
-                m.price,
-                COUNT(cm.id) as purchaseCount
-            FROM memberships m
-            LEFT JOIN client_memberships cm ON m.membership_id = cm.membership_id
-            WHERE m.is_active = TRUE
-            GROUP BY m.membership_id
-            ORDER BY purchaseCount DESC, m.price ASC
-            LIMIT 5
-        `);
+    SELECT
+m.membership_id as membershipId,
+    m.name,
+    m.price,
+    COUNT(cm.id) as purchaseCount
+FROM memberships m
+LEFT JOIN client_memberships cm ON m.membership_id = cm.membership_id
+WHERE m.is_active = TRUE
+GROUP BY m.membership_id
+ORDER BY purchaseCount DESC, m.price ASC
+LIMIT 5
+    `);
 
         return rows;
     }
 
     static async getMembershipStats() {
         const [stats] = await pool.execute(`
-            SELECT 
-                COUNT(DISTINCT cm.client_id) as totalActiveClients,
-                SUM(m.price) as totalRevenue,
-                AVG(m.price) as averagePrice
-            FROM client_memberships cm
-            JOIN memberships m ON cm.membership_id = m.membership_id
-            WHERE cm.status = 'active' AND cm.end_date >= CURDATE()
-        `);
+SELECT
+COUNT(DISTINCT cm.client_id) as totalActiveClients,
+    SUM(m.price) as totalRevenue,
+    AVG(m.price) as averagePrice
+FROM client_memberships cm
+JOIN memberships m ON cm.membership_id = m.membership_id
+WHERE cm.status = 'active' AND cm.end_date >= CURDATE()
+    `);
 
         return stats[0] || {
             totalActiveClients: 0,
             totalRevenue: 0,
             averagePrice: 0
         };
+    }
+
+    static async getPopularByQuarter() {
+        const [rows] = await pool.execute(`
+SELECT
+QUARTER(cm.start_date) AS quarter,
+    m.name,
+COUNT(*) AS totalPurchases
+FROM client_memberships cm
+JOIN memberships m ON cm.membership_id = m.membership_id
+GROUP BY quarter, m.name
+ORDER BY totalPurchases DESC
+    `);
+
+        return rows;
+    }
+
+    static async getServiceCombinations(limit = 10) {
+        const [rows] = await pool.execute(`
+SELECT
+cm.client_id as clientId,
+    GROUP_CONCAT(DISTINCT m.name ORDER BY m.name SEPARATOR ', ') AS combo
+FROM client_memberships cm
+JOIN memberships m ON cm.membership_id = m.membership_id
+GROUP BY cm.client_id
+ORDER BY COUNT(DISTINCT cm.membership_id) DESC
+LIMIT ?
+    `, [limit]);
+
+        return rows;
     }
 }
 

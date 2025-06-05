@@ -4,14 +4,14 @@ import { pool } from "../config/database.js";
 
 class User {
     static async create(userData) {
-        const { fullName, email, password, profilePic = '' } = userData;
+        const { full_name, email, password, profile_pic = "" } = userData;
 
         const [result] = await pool.execute(
             'INSERT INTO users (full_name, email, password, profile_pic) VALUES (?, ?, ?, ?)',
-            [fullName, email, password, profilePic]
+            [full_name, email, password, profile_pic]
         );
 
-        return { id: result.insertId, fullName, email, profilePic };
+        return this.findById(result.insertId);
     }
 
     static async findByEmail(email) {

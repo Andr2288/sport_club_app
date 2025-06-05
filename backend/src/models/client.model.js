@@ -122,41 +122,72 @@ class Client {
 
     static async getClientMemberships(clientId) {
         const [rows] = await pool.execute(`
-            SELECT 
-                cm.id,
-                cm.start_date as startDate,
-                cm.end_date as endDate,
-                cm.status,
-                m.name as membershipName,
-                m.description,
-                m.price
-            FROM client_memberships cm
-            JOIN memberships m ON cm.membership_id = m.membership_id
-            WHERE cm.client_id = ?
-            ORDER BY cm.created_at DESC
-        `, [clientId]);
+    SELECT
+cm.id,
+    cm.start_date as startDate,
+    cm.end_date as endDate,
+    cm.status,
+    m.name as membershipName,
+    m.description,
+    m.price
+FROM client_memberships cm
+JOIN memberships m ON cm.membership_id = m.membership_id
+WHERE cm.client_id = ?
+    ORDER BY cm.created_at DESC
+    `, [clientId]);
 
         return rows;
     }
 
     static async getClientSessions(clientId, limit = 20) {
         const [rows] = await pool.execute(`
-            SELECT 
-                s.session_id as sessionId,
-                s.name,
-                s.session_type as sessionType,
-                s.start_time as startTime,
-                s.end_time as endTime,
-                s.room,
-                sc.status,
-                CONCAT(st.first_name, ' ', st.last_name) as trainerName
-            FROM session_clients sc
-            JOIN sessions s ON sc.session_id = s.session_id
-            LEFT JOIN staff st ON s.trainer_id = st.staff_id
-            WHERE sc.client_id = ?
-            ORDER BY s.start_time DESC
-            LIMIT ?
-        `, [clientId, limit]);
+SELECT
+s.session_id as sessionId,
+    s.name,
+    s.session_type as sessionType,
+    s.start_time as startTime,
+    s.end_time as endTime,
+    s.room,
+    sc.status,
+    CONCAT(st.first_name, ' ', st.last_name) as trainerName
+FROM session_clients sc
+JOIN sessions s ON sc.session_id = s.session_id
+LEFT JOIN staff st ON s.trainer_id = st.staff_id
+WHERE sc.client_id = ?
+    ORDER BY s.start_time DESC
+LIMIT ?
+    `, [clientId, limit]);
+
+        return rows;
+    }
+
+    static async findInactiveClients() {
+        const [rows] = await pool.execute(`
+    SELECT
+c.client_id as clientId,
+    c.first_name as firstName,
+    c.last_name as lastName
+FROM clients c
+LEFT JOIN session_clients sc ON sc.client_id = c.client_id
+LEFT JOIN sessions s ON s.session_id = sc.session_id
+GROUP BY c.client_id
+HAVING MAX(s.start_time) < CURDATE() - INTERVAL 30 DAY OR MAX(s.start_time) IS NULL
+    `);
+
+        return rows;
+    }
+
+    static async getNonRenewedClients() {
+        const [rows] = await pool.execute(`
+SELECT
+c.client_id as clientId,
+    c.first_name as firstName,
+    c.last_name as lastName
+FROM clients c
+LEFT JOIN client_memberships cm ON cm.client_id = c.client_id
+GROUP BY c.client_id
+HAVING MAX(cm.end_date) < CURDATE() OR MAX(cm.end_date) IS NULL
+    `);
 
         return rows;
     }

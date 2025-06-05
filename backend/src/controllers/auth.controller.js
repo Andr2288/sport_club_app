@@ -5,30 +5,40 @@ import utils from "../lib/utils.js";
 import User from "../models/user.model.js";
 import cloudinary from "../lib/cloudinary.js";
 
+const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+};
+
 const signup = async (req, res) => {
     const { fullName, email, password } = req.body;
 
     if (!fullName || !email || !password) {
-        return res.status(400).json({message: "All fields are required"});
+        return res.status(400).json({ message: "All fields are required" });
     }
 
     try {
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
         if (password.length < 6) {
-            return res.status(400).json({message: `Password must be at least 6 characters`});
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
         }
 
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
-            return res.status(400).json({message: `Email already exists`});
+            return res.status(400).json({ message: "Email already exists" });
         }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = await User.create({
-            fullName,
+            full_name: fullName,  // Note: using full_name instead of fullName
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            profile_pic: ""  // Explicitly set to empty string
         });
 
         if (newUser) {
@@ -36,20 +46,19 @@ const signup = async (req, res) => {
 
             return res.status(201).json({
                 id: newUser.id,
-                fullName: newUser.fullName,
+                fullName: newUser.full_name,  // Note: using full_name here
                 email: newUser.email,
-                profilePic: newUser.profilePic,
+                profilePic: newUser.profile_pic,
             });
-        }
-        else {
-            return res.status(400).json({message: `Invalid user data`});
+        } else {
+            return res.status(400).json({ message: "Invalid user data" });
         }
 
     } catch (error) {
         console.log("Error in signup controller", error.message);
-        return res.status(500).json({message: `Internal Server Error`});
+        return res.status(500).json({ message: "Internal Server Error" });
     }
-}
+};
 
 const login = async (req, res) => {
     const { email, password } = req.body;

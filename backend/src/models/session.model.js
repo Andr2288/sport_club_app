@@ -26,47 +26,47 @@ class Session {
 
     static async findById(sessionId) {
         const [rows] = await pool.execute(`
-            SELECT 
-                s.session_id as sessionId,
-                s.session_type as sessionType,
-                s.name,
-                s.description,
-                s.start_time as startTime,
-                s.end_time as endTime,
-                s.room,
-                s.max_capacity as maxCapacity,
-                s.trainer_id as trainerId,
-                CONCAT(st.first_name, ' ', st.last_name) as trainerName,
-                s.created_at,
-                s.updated_at
-            FROM sessions s
-            LEFT JOIN staff st ON s.trainer_id = st.staff_id
-            WHERE s.session_id = ?
-        `, [sessionId]);
+SELECT
+s.session_id as sessionId,
+    s.session_type as sessionType,
+    s.name,
+    s.description,
+    s.start_time as startTime,
+    s.end_time as endTime,
+    s.room,
+    s.max_capacity as maxCapacity,
+    s.trainer_id as trainerId,
+    CONCAT(st.first_name, ' ', st.last_name) as trainerName,
+    s.created_at,
+    s.updated_at
+FROM sessions s
+LEFT JOIN staff st ON s.trainer_id = st.staff_id
+WHERE s.session_id = ?
+    `, [sessionId]);
 
         return rows[0] || null;
     }
 
     static async findAll(limit = 50, offset = 0) {
         const [rows] = await pool.execute(`
-            SELECT 
-                s.session_id as sessionId,
-                s.session_type as sessionType,
-                s.name,
-                s.description,
-                s.start_time as startTime,
-                s.end_time as endTime,
-                s.room,
-                s.max_capacity as maxCapacity,
-                s.trainer_id as trainerId,
-                CONCAT(st.first_name, ' ', st.last_name) as trainerName,
-                COUNT(sc.client_id) as bookedClients
-            FROM sessions s
-            LEFT JOIN staff st ON s.trainer_id = st.staff_id
-            LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
-            GROUP BY s.session_id
-            ORDER BY s.start_time DESC
-            LIMIT ? OFFSET ?
+    SELECT
+s.session_id as sessionId,
+    s.session_type as sessionType,
+    s.name,
+    s.description,
+    s.start_time as startTime,
+    s.end_time as endTime,
+    s.room,
+    s.max_capacity as maxCapacity,
+    s.trainer_id as trainerId,
+    CONCAT(st.first_name, ' ', st.last_name) as trainerName,
+    COUNT(sc.client_id) as bookedClients
+FROM sessions s
+LEFT JOIN staff st ON s.trainer_id = st.staff_id
+LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
+GROUP BY s.session_id
+ORDER BY s.start_time DESC
+LIMIT ? OFFSET ?
         `, [limit, offset]);
 
         return rows;
@@ -74,46 +74,46 @@ class Session {
 
     static async findUpcoming(limit = 20) {
         const [rows] = await pool.execute(`
-            SELECT 
-                s.session_id as sessionId,
-                s.session_type as sessionType,
-                s.name,
-                s.start_time as startTime,
-                s.end_time as endTime,
-                s.room,
-                s.max_capacity as maxCapacity,
-                CONCAT(st.first_name, ' ', st.last_name) as trainerName,
-                COUNT(sc.client_id) as bookedClients
-            FROM sessions s
-            LEFT JOIN staff st ON s.trainer_id = st.staff_id
-            LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
-            WHERE s.start_time > NOW()
-            GROUP BY s.session_id
-            ORDER BY s.start_time ASC
-            LIMIT ?
-        `, [limit]);
+        SELECT
+    s.session_id as sessionId,
+    s.session_type as sessionType,
+    s.name,
+    s.start_time as startTime,
+    s.end_time as endTime,
+    s.room,
+    s.max_capacity as maxCapacity,
+    CONCAT(st.first_name, ' ', st.last_name) as trainerName,
+    COUNT(sc.client_id) as bookedClients
+FROM sessions s
+LEFT JOIN staff st ON s.trainer_id = st.staff_id
+LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
+WHERE s.start_time > NOW()
+GROUP BY s.session_id
+ORDER BY s.start_time ASC
+LIMIT ?
+    `, [limit]);
 
         return rows;
     }
 
     static async findByTrainer(trainerId, limit = 20) {
         const [rows] = await pool.execute(`
-            SELECT 
-                s.session_id as sessionId,
-                s.session_type as sessionType,
-                s.name,
-                s.start_time as startTime,
-                s.end_time as endTime,
-                s.room,
-                s.max_capacity as maxCapacity,
-                COUNT(sc.client_id) as bookedClients
-            FROM sessions s
-            LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
-            WHERE s.trainer_id = ?
-            GROUP BY s.session_id
-            ORDER BY s.start_time DESC
-            LIMIT ?
-        `, [trainerId, limit]);
+    SELECT
+s.session_id as sessionId,
+    s.session_type as sessionType,
+    s.name,
+    s.start_time as startTime,
+    s.end_time as endTime,
+    s.room,
+    s.max_capacity as maxCapacity,
+    COUNT(sc.client_id) as bookedClients
+FROM sessions s
+LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
+WHERE s.trainer_id = ?
+    GROUP BY s.session_id
+ORDER BY s.start_time DESC
+LIMIT ?
+    `, [trainerId, limit]);
 
         return rows;
     }
@@ -181,7 +181,6 @@ class Session {
     }
 
     static async bookClient(sessionId, clientId) {
-        // Перевіряємо чи є місце
         const session = await this.findById(sessionId);
         if (!session) {
             throw new Error('Session not found');
@@ -196,7 +195,6 @@ class Session {
             throw new Error('Session is full');
         }
 
-        // Перевіряємо чи клієнт вже записаний
         const [existingBooking] = await pool.execute(
             'SELECT * FROM session_clients WHERE session_id = ? AND client_id = ?',
             [sessionId, clientId]
@@ -239,32 +237,32 @@ class Session {
 
     static async getSessionClients(sessionId) {
         const [rows] = await pool.execute(`
-            SELECT 
-                sc.id,
-                sc.client_id as clientId,
-                CONCAT(c.first_name, ' ', c.last_name) as clientName,
-                c.email,
-                c.phone,
-                sc.status,
-                sc.created_at as bookedAt
-            FROM session_clients sc
-            JOIN clients c ON sc.client_id = c.client_id
-            WHERE sc.session_id = ?
-            ORDER BY sc.created_at ASC
-        `, [sessionId]);
+    SELECT
+sc.id,
+    sc.client_id as clientId,
+    CONCAT(c.first_name, ' ', c.last_name) as clientName,
+    c.email,
+    c.phone,
+    sc.status,
+    sc.created_at as bookedAt
+FROM session_clients sc
+JOIN clients c ON sc.client_id = c.client_id
+WHERE sc.session_id = ?
+    ORDER BY sc.created_at ASC
+    `, [sessionId]);
 
         return rows;
     }
 
     static async getSessionStats() {
         const [stats] = await pool.execute(`
-            SELECT 
-                COUNT(*) as totalSessions,
-                COUNT(CASE WHEN start_time > NOW() THEN 1 END) as upcomingSessions,
-                COUNT(CASE WHEN start_time < NOW() THEN 1 END) as completedSessions,
-                AVG(max_capacity) as averageCapacity
-            FROM sessions
-        `);
+SELECT
+COUNT(*) as totalSessions,
+    COUNT(CASE WHEN start_time > NOW() THEN 1 END) as upcomingSessions,
+    COUNT(CASE WHEN start_time < NOW() THEN 1 END) as completedSessions,
+    AVG(max_capacity) as averageCapacity
+FROM sessions
+    `);
 
         return stats[0] || {
             totalSessions: 0,
@@ -276,22 +274,22 @@ class Session {
 
     static async getAvailableSessions(date = null) {
         let query = `
-            SELECT 
-                s.session_id as sessionId,
-                s.session_type as sessionType,
-                s.name,
-                s.start_time as startTime,
-                s.end_time as endTime,
-                s.room,
-                s.max_capacity as maxCapacity,
-                CONCAT(st.first_name, ' ', st.last_name) as trainerName,
-                COUNT(sc.client_id) as bookedClients,
-                (s.max_capacity - COUNT(sc.client_id)) as availableSpots
-            FROM sessions s
-            LEFT JOIN staff st ON s.trainer_id = st.staff_id
-            LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
-            WHERE s.start_time > NOW()
-        `;
+SELECT
+s.session_id as sessionId,
+    s.session_type as sessionType,
+    s.name,
+    s.start_time as startTime,
+    s.end_time as endTime,
+    s.room,
+    s.max_capacity as maxCapacity,
+    CONCAT(st.first_name, ' ', st.last_name) as trainerName,
+    COUNT(sc.client_id) as bookedClients,
+    (s.max_capacity - COUNT(sc.client_id)) as availableSpots
+FROM sessions s
+LEFT JOIN staff st ON s.trainer_id = st.staff_id
+LEFT JOIN session_clients sc ON s.session_id = sc.session_id AND sc.status IN ('booked', 'attended')
+WHERE s.start_time > NOW()
+    `;
 
         const params = [];
 
@@ -301,13 +299,43 @@ class Session {
         }
 
         query += `
-            GROUP BY s.session_id
-            HAVING availableSpots > 0
-            ORDER BY s.start_time ASC
-        `;
+GROUP BY s.session_id
+HAVING availableSpots > 0
+ORDER BY s.start_time ASC
+    `;
 
         const [rows] = await pool.execute(query, params);
         return rows;
+    }
+
+    static async getAverageDurationByType() {
+        const [rows] = await pool.execute(
+            `SELECT
+session_type as sessionType,
+    ROUND(AVG(TIMESTAMPDIFF(MINUTE, start_time, end_time)), 2) AS avgDurationMinutes
+FROM sessions
+GROUP BY session_type`
+        );
+
+        return rows;
+    }
+
+    static async getAverageGroupSize() {
+        const [stats] = await pool.execute(`
+SELECT
+AVG(group_size) AS avgGroupSize
+FROM (
+    SELECT
+s.session_id,
+    COUNT(sc.client_id) AS group_size
+FROM sessions s
+JOIN session_clients sc ON sc.session_id = s.session_id
+WHERE s.session_type = 'group'
+GROUP BY s.session_id
+) AS grouped
+    `);
+
+        return stats[0] || { avgGroupSize: 0 };
     }
 }
 
